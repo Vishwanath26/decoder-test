@@ -88,6 +88,7 @@ class Indexer:
                 self._repo.symbols.delete_in_file(file)
 
                 result = self._parser.parse(file)
+                stats.symbols += 1
                 for parsed_symbol in result.symbols:
                     symbol_id = self._repo.symbols.insert(
                         name=parsed_symbol.name,
@@ -99,7 +100,6 @@ class Indexer:
                         parent_id=self._get_parent_id(parsed_symbol.parent_qualified_name),
                     )
                     self._symbol_cache[parsed_symbol.qualified_name] = symbol_id
-                    stats.symbols += 1
 
                 file_hash = compute_file_hash(file)
                 self._repo.files.upsert(file, file_hash)

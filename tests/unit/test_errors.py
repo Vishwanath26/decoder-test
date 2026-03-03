@@ -149,7 +149,38 @@ class TestIndexerErrors:
 
         # Only include.py should be indexed
         assert stats.files == 1
-        assert stats.skipped == 1
+
+    def test_skipped_count_includes_nested_excluded_files(
+        self, repository: SymbolRepository, temp_dir: Path
+    ) -> None:
+        """Test that skipped counter counts files in nested excluded directories."""
+        # Top level file — should be indexed
+        (temp_dir / "include.py").write_text("def included(): pass")
+
+        # Nested file inside excluded folder — should be skipped AND counted
+        tests_dir = temp_dir / "tests"
+        tests_dir.mkdir()
+        (tests_dir / "test_something.py").write_text("def test_excluded(): pass")
+
+        indexer = Indexer(repository)
+        stats = indexer.index_directory(temp_dir, exclude_patterns=["tests/*"])
+
+        assert stats.files == 1     
+        assert stats.skipped == 1    
+
+    def test_symbols_count_is_accurate(
+        self, repository: SymbolRepository, temp_dir: Path
+    ) -> None:
+        """Test that stats.symbols counts individual symbols not files."""
+        # One file with TWO functions
+        (temp_dir / "foo.py").write_text(
+            "def foo(): pass\ndef bar(): pass"
+        )
+
+        indexer = Indexer(repository)
+        stats = indexer.index_directory(temp_dir)
+
+        assert stats.symbols == 2  
 
     def test_index_unchanged_files_skipped(
         self, repository: SymbolRepository, temp_dir: Path
